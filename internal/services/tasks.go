@@ -121,6 +121,16 @@ func (s *ToDoService) addTask(resp http.ResponseWriter, req *http.Request) {
 
 	resp.Header().Set("Content-Type", "application/json")
 
+	// Add by VienNV start
+	if s.Store.CheckIsLimitReachedTask(req.Context(), t.UserID, t.CreatedDate) {
+		resp.WriteHeader(http.StatusTooManyRequests)
+		json.NewEncoder(resp).Encode(map[string]string{
+			"message": "limit reached task",
+		})
+		return
+	}
+	// Add by VienNV end
+
 	err = s.Store.AddTask(req.Context(), t)
 	if err != nil {
 		resp.WriteHeader(http.StatusInternalServerError)
@@ -145,7 +155,7 @@ func value(req *http.Request, p string) sql.NullString {
 func (s *ToDoService) createToken(id string) (string, error) {
 	atClaims := jwt.MapClaims{}
 	atClaims["user_id"] = id
-	atClaims["exp"] = time.Now().Add(time.Minute * 15).Unix()
+	atClaims["exp"] = time.Now().Add(time.Minute * 1445).Unix()
 	at := jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
 	token, err := at.SignedString([]byte(s.JWTKey))
 	if err != nil {
