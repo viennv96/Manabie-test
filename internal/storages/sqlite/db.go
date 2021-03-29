@@ -61,3 +61,27 @@ func (l *LiteDB) ValidateUser(ctx context.Context, userID, pwd sql.NullString) b
 
 	return true
 }
+
+// Add by VienNV start
+// CheckIsLimitReachedTask returns tasks created is reached or not
+func (l *LiteDB) CheckIsLimitReachedTask(ctx context.Context, userID, createdDate string) bool {
+	stmt := `SELECT COUNT(tasks.id) AS TasksCount, users.max_todo AS MaxTodo
+			 FROM tasks join users ON tasks.user_id = users.id 
+		 	 WHERE users.id = ? AND tasks.created_date = ?`
+	row := l.DB.QueryRowContext(ctx, stmt, userID, createdDate)
+	reachedTask := struct {
+		TasksCount int
+		MaxTodo int
+	}{}
+	err := row.Scan(&reachedTask.TasksCount, &reachedTask.MaxTodo)
+	if err != nil {
+		return false
+	}
+
+	if reachedTask.TasksCount >= reachedTask.MaxTodo {
+		return true
+	} else {
+		return false
+	}
+}
+// Add by VienNV end
